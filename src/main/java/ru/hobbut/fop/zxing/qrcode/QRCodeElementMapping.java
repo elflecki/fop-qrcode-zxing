@@ -37,7 +37,7 @@ public class QRCodeElementMapping extends ElementMapping {
 
     public QRCodeElementMapping() {
         this.namespaceURI = NAMESPACE;
-        initialize();
+        //initialize();
     }
 
     public DOMImplementation getDOMImplementation() {
@@ -47,7 +47,7 @@ public class QRCodeElementMapping extends ElementMapping {
     @Override
     protected void initialize() {
         if (foObjs == null) {
-            foObjs = new HashMap();
+            foObjs = new java.util.HashMap<String, Maker>();
             foObjs.put("qr-code", new QRCodeRootMaker());
             foObjs.put(DEFAULT, new QRCodeMaker());
         }

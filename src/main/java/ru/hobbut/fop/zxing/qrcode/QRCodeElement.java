@@ -21,10 +21,12 @@ package ru.hobbut.fop.zxing.qrcode;
 
 import org.apache.avalon.framework.configuration.Configuration;
 import org.apache.avalon.framework.configuration.ConfigurationUtil;
+import org.apache.batik.dom.svg.SVGDOMImplementation;
 import org.apache.fop.apps.FOPException;
 import org.apache.fop.fo.FONode;
 import org.apache.fop.fo.PropertyList;
 import org.apache.xmlgraphics.util.UnitConv;
+import org.w3c.dom.Document;
 import org.xml.sax.Attributes;
 import org.xml.sax.Locator;
 
@@ -43,22 +45,82 @@ public class QRCodeElement extends QRCodeObject {
 
     public static final String DEFAULT_WIDTH = "50mm";
     public static final Pattern SIZE_PATTERN = Pattern.compile("^(\\d+(?:.\\d+)?)(mm|pt|in|cm)?$");
+    
+    
+    private Document svgDoc = null;
+    private double width;
+    private double height;
+    private boolean converted;
+    
 
     public QRCodeElement(FONode parent) {
         super(parent);
     }
 
+    @Override
     public void processNode(String elementName, Locator locator, Attributes attlist, PropertyList propertyList)
             throws FOPException {
         super.processNode(elementName, locator, attlist, propertyList);
         createBasicDocument();
     }
+    
+    /** {@inheritDoc} */
+    @Override
+    public Document getDOMDocument() {
+        convertToSVG();
+        return doc;
+    }
+    
+    /** {@inheritDoc} */
+    @Override
+    public String getNamespaceURI() {
+        if (svgDoc == null) {
+        	return super.getNamespaceURI();
+        }
+        //return "http://www.w3.org/2000/svg";
+        return SVGDOMImplementation.SVG_NAMESPACE_URI;
+    }
 
+    /**
+     * Converts the element to SVG.
+     */
+    public void convertToSVG() {
+        try {
+            if (!converted) {
+            	SetupSize();
+                converted = true;
+                QRCodeRenderer pr = new QRCodeRenderer();
+                svgDoc = pr.createSVGDocument(doc);
+                doc = svgDoc;
+            }
+        } catch (Throwable t) {
+            getLogger().error("Could not convert Plan to SVG", t);
+            width = 0;
+            height = 0;
+        }
+
+    }
+    
+
+    @Override
     public Point2D getDimension(Point2D view) {
-        Configuration cfg = ConfigurationUtil.toConfiguration(this.doc.getDocumentElement());
-        String length = cfg.getAttribute("width", DEFAULT_WIDTH);
-        double size = getSizeInPt(length);
-        return new Point2D.Double(size, size);
+    	convertToSVG();
+    	if (!converted)
+    	{
+    		SetupSize();
+    	}
+    	return new Point2D.Double(width, height);
+    }
+    
+    private void SetupSize() {
+    	if (!converted)
+    	{
+    		Configuration cfg = ConfigurationUtil.toConfiguration(this.doc.getDocumentElement());
+    		String length = cfg.getAttribute("width", DEFAULT_WIDTH);
+    		double size = getSizeInPt(length);
+    		this.width = size;
+    		this.height = size;
+    	}
     }
 
     public static double getSizeInPt(String length) {

@@ -1,3 +1,4 @@
+
 /*
  * #%L
  * fop-zxing
@@ -26,6 +27,7 @@ import com.google.zxing.common.BitArray;
 import com.google.zxing.common.BitMatrix;
 import com.google.zxing.qrcode.QRCodeWriter;
 import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel;
+
 import org.apache.avalon.framework.configuration.Configuration;
 import org.apache.avalon.framework.configuration.ConfigurationUtil;
 import org.apache.batik.dom.svg.SVGDOMImplementation;
@@ -34,8 +36,6 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.fop.render.Renderer;
 import org.apache.fop.render.RendererContext;
 import org.apache.fop.render.XMLHandler;
-import org.apache.fop.render.pdf.PDFRenderer;
-import org.apache.fop.render.ps.PSRenderer;
 import org.w3c.dom.DOMImplementation;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -43,16 +43,9 @@ import org.w3c.dom.Element;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Created with IntelliJ IDEA.
- * User: hobbut
- * Date: 11.02.12
- * Time: 15:15
- */
 
-public class QRCodeXMLHandler implements XMLHandler {
-
-    private static final Log log = LogFactory.getLog(QRCodeXMLHandler.class);
+public class QRCodeRenderer {
+   // private static final Log log = LogFactory.getLog(QRCodeXMLHandler.class);
 
     private static final String DEFAULT_ERROR_CORRECTION_TYPE = "L";
     private static final String DEFAULT_CHARACTER_SET = "ISO-8859-1";
@@ -76,7 +69,8 @@ public class QRCodeXMLHandler implements XMLHandler {
     private static final String STROKE_WIDTH = "0.01";
     private static final String SIZE = "1";
 
-    public void handleXML(RendererContext rendererContext, Document document, String s) throws Exception {
+    
+    public Document createSVGDocument(Document document) throws Exception {
         Configuration cfg = ConfigurationUtil.toConfiguration(document.getDocumentElement());
 
         String msg = cfg.getAttribute(MESSAGE_ATTRIBUTE);
@@ -93,7 +87,7 @@ public class QRCodeXMLHandler implements XMLHandler {
 
         matrix = writer.encode(msg, BarcodeFormat.QR_CODE, 0, 0, hints);
         Document svg = makeSvgQrCode(matrix);
-        rendererContext.getRenderer().renderXML(rendererContext, svg, SVGDOMImplementation.SVG_NAMESPACE_URI);
+        return svg;
     }
 
     private Document makeSvgQrCode(BitMatrix matrix) {
@@ -124,20 +118,6 @@ public class QRCodeXMLHandler implements XMLHandler {
         return svg;
     }
 
-    public boolean supportsRenderer(Renderer renderer) {
-        boolean support = null != renderer.getGraphics2DAdapter();
-        support = support || renderer instanceof PDFRenderer;
-        support = support || renderer instanceof PSRenderer;
-        return support;
-    }
-
-    public String getNamespace() {
-        return QRCodeElementMapping.NAMESPACE;
-    }
-
-    public String getMimeType() {
-        return XMLHandler.HANDLE_ALL;
-    }
 
     private ErrorCorrectionLevel getErrorCorrectionLevel(String level) {
         level = level.toLowerCase();
